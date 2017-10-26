@@ -3,36 +3,45 @@
 SoftwareSerial BT( 6, 7);
 
 boolean connected = false;
+char c = ' ';
 
 int state = 5;
 void setup() {
-  // put your setup code here, to run once:
+ 
   Serial.begin(9600);
-  pinmode(state, INPUT);
+  pinMode(state, INPUT);
   Serial.println("Smart Bike initialized, please connect your device");
   
-  while(!connected){
-    if(digitalRead(state)==HIGH){
-      connected = true;
-    }
-  }
-  
-  Serial.println("Device is connected");
-  //BT.begin(9600);
+  BT.begin(9600);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
- /* if (BTserial.available())
+   
+   while(!connected){
+    if(digitalRead(state)==HIGH){
+      connected = true;
+      Serial.println("Device is connected");
+    }
+  }
+  while(connected){
+    if(digitalRead(state)==LOW){
+      connected = false;
+      Serial.println("Device is not connected");
+    }
+  }
+
+ 
+ 
+ /*if (BT.available())
     {  
-        c = BTserial.read();
-        Serial.write(c);
+        c = BT.read();
+        Serial.println(c);
     }
  
     // Keep reading from Arduino Serial Monitor input field and send to HC-05
     if (Serial.available())
     {
         c =  Serial.read();
-        BTserial.write(c);  
+        BT.write(c);  
     }*/
 }
