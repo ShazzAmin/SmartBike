@@ -1,13 +1,39 @@
+//--- Bluetooth
+#include <SoftwareSerial.h>
+
+
+//--- Broadcast_GPS_SMS
 #include "DFRobot_sim808.h"
 
 #define PHONE_NUMBER "16477721337"
 
+
+//--- Bluetooth
+SoftwareSerial BT( 6, 7);
+
+boolean connected = false;
+char c = ' ';
+
+int state = 5;
+
+
+//--- Broadcast_GPS_SMS
 DFRobot_SIM808 sim(&Serial);
 
+
+//- Setup
 void setup()
 {
   Serial.begin(9600);
-
+	
+  //--- Bluetooth
+  pinMode(state, INPUT);
+  Serial.println("Smart Bike initialized, please connect your device");
+  
+  BT.begin(9600);
+  
+  
+  //--- Broadcast_GPS_SMS
   // DEBUG
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
@@ -33,8 +59,38 @@ void setup()
   sim.sendSMS(PHONE_NUMBER, "INIT: Device intialized.");
 }
 
+//- Loop
 void loop()
 {
+  //--- Bluetooth
+   while(!connected){
+    if(digitalRead(state)==HIGH){
+      connected = true;
+      Serial.println("Device is connected");
+    }
+  }
+  while(connected){
+    if(digitalRead(state)==LOW){
+      connected = false;
+      Serial.println("Device is not connected");
+    }
+  }
+ 
+ /*if (BT.available())
+    {  
+        c = BT.read();
+        Serial.println(c);
+    }
+ 
+    // Keep reading from Arduino Serial Monitor input field and send to HC-05
+    if (Serial.available())
+    {
+        c =  Serial.read();
+        BT.write(c);
+    }*/
+
+
+  //--- Broadcast_GPS_SMS
   if (sim.getGPS())
   {
     Serial.println("Sending GPS information.");
