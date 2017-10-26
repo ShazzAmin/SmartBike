@@ -1,6 +1,6 @@
 #include <SoftwareSerial.h>
 
-SoftwareSerial BT( 6, 7);
+SoftwareSerial BT(3,4);
 
 boolean connected = false;
 char c = ' ';
