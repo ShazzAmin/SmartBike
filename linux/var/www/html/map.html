@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Map</title>
+		<style>
+			#map {
+			height: 100%;
+			width: 100%;
+			}
+			/* Makes the page fill the window. */
+			html, body {
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<p id="debug"></p>
+		<div id="map"></div>
+		<script>
+			var map;
+			var m = [];
+			
+			function download(){
+				var xhttp = new XMLHttpRequest();
+				xhttp.onreadystatechange = function() {
+					if (this.readyState == 4 && this.status == 200) {
+						setMap(this);
+					}
+				};
+				xhttp.open("GET", "gps.xml", true);
+				xhttp.send();
+			}
+			
+			function initMap(){
+				var defaultLocation = {lat: 43.4670077, lng: -80.534062};
+				map = new google.maps.Map(document.getElementById('map'),{
+					zoom: 14,
+					center: defaultLocation
+				});
+				download();				
+			}
+			
+			function setMap(xml) {
+				clear();
+				//only one infoWindow
+				var infoWindow = new google.maps.InfoWindow();	
+				
+				var parser = new DOMParser();
+				var xmlDoc = parser.parseFromString(xml.responseText, "application/xml");
+				
+				if(xmlDoc == null) document.getElementById("debug").innerHTML = "null";
+				var markers = xmlDoc.getElementsByTagName("location");
+
+				for (var i = 0; i < markers.length; i++) {
+					var time = "";
+					if (i + 1 == markers.length){
+						time = "<b>LATEST: </b><br/>";
+
+					}
+					else if (i == 0){
+						time = "<b>INITIAL POSITION: </b><br/>";
+					}
+					time += markers[i].getElementsByTagName("time")[0].childNodes[0].nodeValue;
+					var lat = markers[i].getElementsByTagName("latitude")[0].childNodes[0].nodeValue;
+					var lng = markers[i].getElementsByTagName("longitude")[0].childNodes[0].nodeValue;
+					
+					//the creation of point
+					var point = new google.maps.LatLng(
+						lat,
+						lng);
+					
+					//change marker color
+					var pinImage;
+					var pinColor = "FE7569";
+					if (i + 1 == markers.length){ //green marker
+						pinColor = "2aff00";
+						pinImage = new google.maps.MarkerImage("https://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + pinColor,
+							new google.maps.Size(21, 34),
+							new google.maps.Point(0,0),
+							new google.maps.Point(10, 34));
+					}
+					else if (i == 0){ //red marker
+						pinImage = new google.maps.MarkerImage("https://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + pinColor,
+							new google.maps.Size(21, 34),
+							new google.maps.Point(0,0),
+							new google.maps.Point(10, 34));
+					}
+					else{ //red dot
+						pinImage = {path: google.maps.SymbolPath.CIRCLE,
+							fillColor: 'red',
+							fillOpacity: 1,
+							scale: 4.5,
+							strokeColor: 'white',
+							strokeWeight: 1};
+						//pinImage = new google.maps.MarkerImage(circle)
+					}
+					
+					//create actual marker 
+					var marker = new google.maps.Marker({
+						map: map,
+						position: point,
+						//title: time,
+						title: markers[i].getElementsByTagName("time")[0].childNodes[0].nodeValue,
+						icon: pinImage
+						}); 
+						
+					m.push(marker);	
+						
+					google.maps.event.addListener(marker, 'click',  
+						(function(m,c,info){ 
+							return function() {
+								info.setContent(c);
+								info.open(map,m);
+								map.setCenter(m.getPosition());
+
+							};
+						})(marker,time,infoWindow));
+						// infoWindow.close();
+						// infoWindow.setContent(time);
+						// infoWindow.open(map, marker);
+					//});
+				}
+				
+				//document.getElementById("debug").innerHTML = m.length;
+
+			}
+			
+			function clear(){
+				for (var i = 0; i < m.length; i++){
+					m[i].setMap(null);
+				}
+				m.length = 0;
+			}
+			
+			setInterval(download, 30000);
+		</script>
+		<script async defer
+			src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCt4JppHRQqynls9Wmexe4Z4p_rnsMENaU&callback=initMap">
+		</script>
+	</body>
+</html>
