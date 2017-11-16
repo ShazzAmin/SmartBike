@@ -3,11 +3,11 @@
 	<head>
 		<title>Map</title>
 		<style>
+			/*Makes the page fill the window. */
 			#map {
 			height: 100%;
 			width: 100%;
 			}
-			/* Makes the page fill the window. */
 			html, body {
 			height: 100%;
 			margin: 0;
@@ -16,11 +16,11 @@
 		</style>
 	</head>
 	<body>
-		<p id="debug"></p>
+		<div id="debug"></div>
 		<div id="map"></div>
 		<script>
 			var map;
-			var m = [];
+			var m = []; //array of markers
 			
 			function download(){
 				var xhttp = new XMLHttpRequest();
@@ -33,17 +33,20 @@
 				xhttp.send();
 			}
 			
+			//called by google map api
 			function initMap(){
 				var defaultLocation = {lat: 43.4670077, lng: -80.534062};
 				map = new google.maps.Map(document.getElementById('map'),{
 					zoom: 14,
 					center: defaultLocation
 				});
-				download();				
+				download();
 			}
 			
 			function setMap(xml) {
+			
 				clear();
+				
 				//only one infoWindow
 				var infoWindow = new google.maps.InfoWindow();	
 				
@@ -51,6 +54,7 @@
 				var xmlDoc = parser.parseFromString(xml.responseText, "application/xml");
 				
 				if(xmlDoc == null) document.getElementById("debug").innerHTML = "null";
+				
 				var markers = xmlDoc.getElementsByTagName("location");
 
 				for (var i = 0; i < markers.length; i++) {
@@ -73,9 +77,9 @@
 					
 					//change marker color
 					var pinImage;
-					var pinColor = "FE7569";
+					var pinColor = "FE7569"; //default red
 					if (i + 1 == markers.length){ //green marker
-						pinColor = "2aff00";
+						pinColor = "2aff00"; //green
 						pinImage = new google.maps.MarkerImage("https://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + pinColor,
 							new google.maps.Size(21, 34),
 							new google.maps.Point(0,0),
@@ -101,12 +105,12 @@
 					var marker = new google.maps.Marker({
 						map: map,
 						position: point,
-						//title: time,
 						title: markers[i].getElementsByTagName("time")[0].childNodes[0].nodeValue,
 						icon: pinImage
 						}); 
-						
-					m.push(marker);	
+					
+					//save marker to array
+					m.push(marker);
 						
 					google.maps.event.addListener(marker, 'click',  
 						(function(m,c,info){ 
@@ -117,10 +121,6 @@
 
 							};
 						})(marker,time,infoWindow));
-						// infoWindow.close();
-						// infoWindow.setContent(time);
-						// infoWindow.open(map, marker);
-					//});
 				}
 				
 				//document.getElementById("debug").innerHTML = m.length;
@@ -134,6 +134,7 @@
 				m.length = 0;
 			}
 			
+			//30 seconds refresh
 			setInterval(download, 30000);
 		</script>
 		<script async defer
