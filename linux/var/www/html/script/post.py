@@ -19,6 +19,7 @@ class respond:
 			f.write(xml)
 		with open("/var/www/html/gps.xml", "a") as f:
 			f.write(xml)
+			f.write("\n")
 		return
 
 

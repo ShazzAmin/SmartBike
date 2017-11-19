@@ -14,6 +14,9 @@
 			padding: 0;
 			}
 		</style>
+		<meta http-equiv='cache-control' content='no-cache'>
+		<meta http-equiv='expires' content='0'>
+		<meta http-equiv='pragma' content='no-cache'>
 	</head>
 	<body>
 		<div id="debug"></div>
@@ -58,6 +61,26 @@
 				var markers = xmlDoc.getElementsByTagName("location");
 
 				for (var i = 0; i < markers.length; i++) {
+					var lat = markers[i].getElementsByTagName("latitude")[0].childNodes[0].nodeValue;
+					var lng = markers[i].getElementsByTagName("longitude")[0].childNodes[0].nodeValue;					
+					var _time =  markers[i].getElementsByTagName("time")[0].childNodes[0].nodeValue;
+					
+					//split time into day and time
+					var tArray = _time.split(" ");
+					
+					//split day into year, month, date
+					var dayArray = tArray[0].split("-");
+					
+					//split time into hours, minutes, seconds
+					var timeArray = tArray[1].split(".");
+					
+					var date = (new Date(dayArray[0], dayArray[1]-1, dayArray[2], timeArray[0], timeArray[1])).getTime(); //month is zero indexed, damn
+					//var time = parseTime(tArray[1]);
+					
+					var currentDate = Date.now();
+					
+					const OneDay = 86400000;
+					
 					var time = "";
 					if (i + 1 == markers.length){
 						time = "<b>LATEST: </b><br/>";
@@ -66,14 +89,32 @@
 					else if (i == 0){
 						time = "<b>INITIAL POSITION: </b><br/>";
 					}
-					time += markers[i].getElementsByTagName("time")[0].childNodes[0].nodeValue;
-					var lat = markers[i].getElementsByTagName("latitude")[0].childNodes[0].nodeValue;
-					var lng = markers[i].getElementsByTagName("longitude")[0].childNodes[0].nodeValue;
+					time += _time;
+					
+					if (currentDate - date > OneDay){
+						time += "<br/>(Long time ago)";
+					}
+					else{
+						var diff = currentDate - date;
+						var hours = diff/3600000;
+						var minutes = diff/60000 - hours;
+						var seconds = diff/1000 - minutes -hours;
+						time += "<br/> (";
+						if (Math.floor(hours) != 0){
+							time += Math.floor(hours) + " hour(s)";
+						}
+						else if (Math.floor(minutes) != 0){
+							time += Math.floor(minutes) + " minute(s)";
+						}
+						else if (Math.floor(seconds) != 0){
+							time += Math.floor(seconds) + " second(s)";
+						}
+						time += " ago)";
+					}
+
 					
 					//the creation of point
-					var point = new google.maps.LatLng(
-						lat,
-						lng);
+					var point = new google.maps.LatLng(lat, lng);
 					
 					//change marker color
 					var pinImage;
@@ -105,7 +146,7 @@
 					var marker = new google.maps.Marker({
 						map: map,
 						position: point,
-						title: markers[i].getElementsByTagName("time")[0].childNodes[0].nodeValue,
+						title: _time,
 						icon: pinImage
 						}); 
 					
@@ -122,9 +163,6 @@
 							};
 						})(marker,time,infoWindow));
 				}
-				
-				//document.getElementById("debug").innerHTML = m.length;
-
 			}
 			
 			function clear(){
@@ -134,6 +172,16 @@
 				m.length = 0;
 			}
 			
+			function parseTime(_s){
+				var dateRegex = /(\d\d?).(\d\d)/;
+				var match = dateRegex.exec(_s);
+				if(!match) return null;
+				return {
+					hours: match[1]-0, // Subtracting zero converts to a number
+					minutes: match[2]-0,
+				};
+			}
+
 			//30 seconds refresh
 			setInterval(download, 30000);
 		</script>
