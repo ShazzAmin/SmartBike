@@ -46,8 +46,7 @@
 				download();
 			}
 			
-			function setMap(xml) {
-			
+			function setMap(xml) {			
 				clear();
 				
 				//only one infoWindow
@@ -56,6 +55,7 @@
 				var parser = new DOMParser();
 				var xmlDoc = parser.parseFromString(xml.responseText, "application/xml");
 				
+				//debug
 				if(xmlDoc == null) document.getElementById("debug").innerHTML = "null";
 				
 				var markers = xmlDoc.getElementsByTagName("location");
@@ -63,10 +63,10 @@
 				for (var i = 0; i < markers.length; i++) {
 					var lat = markers[i].getElementsByTagName("latitude")[0].childNodes[0].nodeValue;
 					var lng = markers[i].getElementsByTagName("longitude")[0].childNodes[0].nodeValue;					
-					var _time =  markers[i].getElementsByTagName("time")[0].childNodes[0].nodeValue;
+					var time =  markers[i].getElementsByTagName("time")[0].childNodes[0].nodeValue;
 					
 					//split time into day and time
-					var tArray = _time.split(" ");
+					var tArray = time.split(" ");
 					
 					//split day into year, month, date
 					var dayArray = tArray[0].split("-");
@@ -74,42 +74,42 @@
 					//split time into hours, minutes, seconds
 					var timeArray = tArray[1].split(".");
 					
-					var date = (new Date(dayArray[0], dayArray[1]-1, dayArray[2], timeArray[0], timeArray[1])).getTime(); //month is zero indexed, damn
-					//var time = parseTime(tArray[1]);
+					var date = (new Date(dayArray[0], dayArray[1]-1, dayArray[2], timeArray[0], timeArray[1])).getTime(); //month is zero indexed
 					
 					var currentDate = Date.now();
 					
 					const OneDay = 86400000;
 					
-					var time = "";
+					var text = "";
 					if (i + 1 == markers.length){
-						time = "<b>LATEST: </b><br/>";
+						text = "<b>LATEST: </b><br/>";
 
 					}
 					else if (i == 0){
-						time = "<b>INITIAL POSITION: </b><br/>";
+						text = "<b>INITIAL POSITION: </b><br/>";
 					}
-					time += _time;
+					
+					text += time;
 					
 					if (currentDate - date > OneDay){
-						time += "<br/>(Long time ago)";
+						text += "<br/>(Long time ago)";
 					}
 					else{
 						var diff = currentDate - date;
 						var hours = diff/3600000;
 						var minutes = diff/60000 - hours;
 						var seconds = diff/1000 - minutes -hours;
-						time += "<br/> (";
+						text += "<br/> (";
 						if (Math.floor(hours) != 0){
-							time += Math.floor(hours) + " hour(s)";
+							text += Math.floor(hours) + " hour(s)";
 						}
 						else if (Math.floor(minutes) != 0){
-							time += Math.floor(minutes) + " minute(s)";
+							text += Math.floor(minutes) + " minute(s)";
 						}
 						else if (Math.floor(seconds) != 0){
-							time += Math.floor(seconds) + " second(s)";
+							text += Math.floor(seconds) + " second(s)";
 						}
-						time += " ago)";
+						text += " ago)";
 					}
 
 					
@@ -146,7 +146,7 @@
 					var marker = new google.maps.Marker({
 						map: map,
 						position: point,
-						title: _time,
+						title: time,
 						icon: pinImage
 						}); 
 					
@@ -161,8 +161,8 @@
 								map.setCenter(m.getPosition());
 
 							};
-						})(marker,time,infoWindow));
-				}
+						})(marker,text,infoWindow));
+				} //end for loop
 			}
 			
 			function clear(){
@@ -172,18 +172,8 @@
 				m.length = 0;
 			}
 			
-			function parseTime(_s){
-				var dateRegex = /(\d\d?).(\d\d)/;
-				var match = dateRegex.exec(_s);
-				if(!match) return null;
-				return {
-					hours: match[1]-0, // Subtracting zero converts to a number
-					minutes: match[2]-0,
-				};
-			}
-
 			//30 seconds refresh
-			setInterval(download, 30000);
+			setInterval(download, 15000);
 		</script>
 		<script async defer
 			src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCt4JppHRQqynls9Wmexe4Z4p_rnsMENaU&callback=initMap">
