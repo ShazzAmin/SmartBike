@@ -1,4 +1,0 @@
-#Sun Nov 12 14:52:59 EST 2017
-base.0=C\:\\Users\\Shazz\\AndroidStudioProjects\\SmartBike\\app\\build\\intermediates\\transforms\\dexMerger\\debug\\7
-renamed.0=classes.dex
-file.0=C\:\\Users\\Shazz\\AndroidStudioProjects\\SmartBike\\app\\build\\intermediates\\transforms\\dexMerger\\debug\\7\\classes.dex
