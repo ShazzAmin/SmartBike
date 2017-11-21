@@ -1,0 +1,6 @@
+char http_post1[] = "POST /script HTTP/1.0 Host: danielzhang.ddns.net Content-Type: text/xml  <location>   <time>2017-11-08 16.48</time>   <latitude>43.472683</latitude>   <longitude>-80.541772</longitude></location>";
+char http_post2[] = "POST /script HTTP/1.0 Host: danielzhang.ddns.net Content-Type: text/xml  <location>   <time>2017-11-09 16.34</time>   <latitude>43.4721855</latitude>   <longitude>-80.543938</longitude></location>";
+char http_post3[] = "POST /script HTTP/1.0 Host: danielzhang.ddns.net Content-Type: text/xml  <location>   <time>2017-11-12 12.57</time>   <latitude>43.471979</latitude>   <longitude> -80.548019</longitude></location>";
+char http_post4[] = "POST /script HTTP/1.0 Host: danielzhang.ddns.net Content-Type: text/xml  <location>   <time>2017-11-12 13.10</time>   <latitude>43.466197</latitude>   <longitude>-80.534683</longitude></location>";
+char http_post5[] = "POST /script HTTP/1.0 Host: danielzhang.ddns.net Content-Type: text/xml  <location>   <time>2017-11-12 14.23</time>   <latitude>43.469319</latitude>   <longitude>-80.533228</longitude></location>";
+char http_post6[] = "POST /script HTTP/1.0 Host: danielzhang.ddns.net Content-Type: text/xml  <location>   <time>2017-11-12 14.27</time>   <latitude>43.477059</latitude>   <longitude> -80.542932</longitude></location>";
