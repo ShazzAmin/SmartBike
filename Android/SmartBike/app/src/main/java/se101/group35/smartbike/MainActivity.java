@@ -29,7 +29,6 @@ public class MainActivity extends AppCompatActivity
         mapWebView.getSettings().setJavaScriptEnabled(true);
 
         Intent intent = new Intent(this, BackgroundService.class);
-        intent.setAction(BackgroundService.ACTION_START);
         startService(intent);
 
         statusTextView = findViewById(R.id.statusTextView);
@@ -40,6 +39,7 @@ public class MainActivity extends AppCompatActivity
             public void onClick(View v)
             {
                 // TODO: open pairing activity
+                sendBroadcast(new Intent(BackgroundService.DEVICE_CONNECTION_STATUS));
             }
         });
     }
@@ -53,7 +53,6 @@ public class MainActivity extends AppCompatActivity
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BackgroundService.DEVICE_CONNECTED);
         intentFilter.addAction(BackgroundService.DEVICE_DISCONNECTED);
-        intentFilter.addAction(BackgroundService.DEVICE_MOVED);
         registerReceiver(eventReceiver, intentFilter);
     }
 
@@ -80,11 +79,6 @@ public class MainActivity extends AppCompatActivity
             {
                 statusTextView.setText("device disconnected");
                 System.out.println("device disconnected");
-            }
-            else if (action.equals(BackgroundService.DEVICE_MOVED))
-            {
-                statusTextView.setText("device moved");
-                System.out.println("device moved");
             }
         }
     }
