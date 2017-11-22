@@ -20,7 +20,7 @@
         </activity>
 
         <service
-            android:name=".BluetoothConnectivity"
+            android:name=".BackgroundService"
             android:exported="false"></service>
     </application>
 

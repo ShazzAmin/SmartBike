@@ -14,13 +14,9 @@ void setup()
   delay(2500);
   digitalWrite(LED_BUILTIN, LOW);
 
-  while(1)
+  while(!sim.init())
   {
-    int x = sim.init();
-    if (x == 3) break;
-    char output[64];
-    snprintf(output, "Failed to initialize SIM module (error code: %d). Retrying...", x);
-    Serial.println(output);
+    Serial.println("Failed to initialize SIM module. Retrying...");
     // DEBUG
     digitalWrite(LED_BUILTIN, HIGH);
     delay(500);
@@ -35,6 +31,7 @@ void setup()
 
 void loop()
 {
+  //sim.sendSMS(PHONE_NUMBER, "loop");
   if (sim.getGPS())
   {
     Serial.println("Sending GPS information.");
