@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cd /var/www/html
+
+node compare.js | grep -E '(1|0)'  | tee check.txt
