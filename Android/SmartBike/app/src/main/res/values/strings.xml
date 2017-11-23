@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">SmartBike</string>
+    <string name="BLUETOOTH_DEVICE_ADDRESS"></string>
 </resources>
