@@ -223,7 +223,6 @@ public class BackgroundService extends Service
         {
             startBluetoothScanningLoop();
             startIsMovingLoop();
-            // TODO: start
 
             // stopSelf(msg.arg1);
         }
