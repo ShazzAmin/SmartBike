@@ -1,34 +1,38 @@
+#include <DFRobot_sim808.h>
 #include <SoftwareSerial.h>
 
+DFRobot_SIM808 sim808(&Serial);
 SoftwareSerial BT(3,4);
 
+int state = 5;
 boolean connected = false;
 char c = ' ';
-
-int state = 5;
 void setup() {
  
   Serial.begin(9600);
-  pinMode(state, INPUT);
-  Serial.println("Smart Bike initialized, please connect your device");
-  
   BT.begin(9600);
+  pinMode(state, INPUT);
+  Serial.print("IP Address is ");Serial.println("Smart Bike initialized, please connect your device");
+  
 }
 
 void loop() {
+      while(!connected){
+        if(digitalRead(state)==HIGH){     
+          connected = true;
+          Serial.println("Device is connected");
+        }
+      }
+      while(connected){
+        if(digitalRead(state)==LOW){
+          connected = false;
+          Serial.println("Device is not connected");
+        }
+    
+        }
+   }
    
-   while(!connected){
-    if(digitalRead(state)==HIGH){
-      connected = true;
-      Serial.println("Device is connected");
-    }
-  }
-  while(connected){
-    if(digitalRead(state)==LOW){
-      connected = false;
-      Serial.println("Device is not connected");
-    }
-  }
+      
 
  
  
@@ -44,4 +48,4 @@ void loop() {
         c =  Serial.read();
         BT.write(c);  
     }*/
-}
+
