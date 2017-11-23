@@ -1,6 +1,5 @@
 package se101.group35.smartbike;
 
-import android.annotation.TargetApi;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -15,22 +14,32 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+import android.util.Xml;
 
-import java.util.Set;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 public class BackgroundService extends Service
 {
     public static final String DEVICE_CONNECTED = "DEVICE_CONNECTED";
     public static final String DEVICE_DISCONNECTED = "DEVICE_DISCONNECTED";
     public static final String DEVICE_CONNECTION_STATUS = "DEVICE_CONNECTION_STATUS";
-    private static final int BLUETOOTH_SCANNING_TIMEOUT =  15 * 1000; // in milliseconds
-    private static final int BLUETOOTH_SCANNING_DELAY = 1 * 60 * 1000; // in milliseconds
+    private static final int BLUETOOTH_SCANNING_TIMEOUT =  20 * 1000; // in milliseconds
+    private static final int BLUETOOTH_SCANNING_DELAY = 5 * 60 * 1000; // in milliseconds // TODO: update for demo
+    private static final int WEBSERVER_POLLING_DELAY = 30 * 1000; // in milliseconds
 
     private Looper serviceLooper;
     private ServiceHandler serviceHandler;
     private EventReceiver eventReceiver;
     private BluetoothAdapter bluetoothAdapter;
     private Handler handler;
+    HttpURLConnection connection;
     private boolean isConnected = false;
 
     public BackgroundService()
@@ -107,8 +116,99 @@ public class BackgroundService extends Service
         }
     }
 
+    private void skipXMLTag(XmlPullParser parser) throws XmlPullParserException, IOException
+    {
+        if (parser.getEventType() != XmlPullParser.START_TAG) throw new IllegalStateException();
+        int depth = 1;
+        while (depth != 0)
+        {
+            switch (parser.next())
+            {
+                case XmlPullParser.END_TAG:
+                    depth--;
+                    break;
+                case XmlPullParser.START_TAG:
+                    depth++;
+                    break;
+            }
+        }
+    }
+
     private void startIsMovingLoop()
     {
+        if (connection != null)
+        {
+            connection.disconnect();
+            connection = null;
+        }
+
+        handler.postDelayed(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                startIsMovingLoop();
+            }
+        }, WEBSERVER_POLLING_DELAY);
+
+        if (isConnected) return;
+
+        System.out.println("starting connection");
+
+        InputStream in = null;
+        try
+        {
+            connection = (HttpURLConnection) (new URL(getString(R.string.GPS_FILE_URL))).openConnection();
+            in = new BufferedInputStream(connection.getInputStream());
+
+            XmlPullParser parser = Xml.newPullParser();
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+            parser.setInput(in, null);
+            double lat1 = 0;
+            double long1 = 0;
+            double lat2 = 0;
+            double long2 = 0;
+            while (parser.next() != XmlPullParser.END_DOCUMENT)
+            {
+                if (parser.getEventType() != XmlPullParser.START_TAG) continue;
+                String name = parser.getName();
+                System.out.println(name);
+                if (name.equals("latitude"))
+                {
+                    if (parser.next() == XmlPullParser.TEXT)
+                    {
+                        lat1 = lat2;
+                        lat2 = Double.parseDouble(parser.getText());
+                        parser.nextTag();
+                    }
+                }
+                else if (name.equals("longitude"))
+                {
+                    if (parser.next() == XmlPullParser.TEXT)
+                    {
+                        long1 = long2;
+                        long2 = Double.parseDouble(parser.getText());
+                        parser.nextTag();
+                    }
+                }
+                else if (!name.equals("locations") && !name.equals("location"))
+                {
+                    skipXMLTag(parser);
+                }
+            }
+
+            // System.out.println(lat1 + "," + long1 + "," + lat2 + "," + long2);
+            if (didMove(lat1, long1, lat2, long2))
+            {
+                // TODO: Show notification
+            }
+        }
+        catch (Exception e) { }
+        finally
+        {
+            try { if (in != null) in.close(); } catch (Exception e) { }
+            if (connection != null) connection.disconnect();
+        }
     }
 
     private final class ServiceHandler extends Handler
@@ -124,12 +224,22 @@ public class BackgroundService extends Service
             startBluetoothScanningLoop();
             startIsMovingLoop();
             // TODO: start
-//            sendBroadcast(new Intent(DEVICE_CONNECTED));
-//            try{Thread.sleep(10000);}catch(Exception e){}
-//            sendBroadcast(new Intent(DEVICE_DISCONNECTED));
 
-            //stopSelf(msg.arg1);
+            // stopSelf(msg.arg1);
         }
+    }
+
+    private boolean didMove(double lat1, double long1, double lat2, double long2)
+    {
+        lat1 = Math.toRadians(lat1);
+        lat2 = Math.toRadians(lat2);
+
+        double haversine = Math.pow(Math.sin(Math.toRadians(lat2 - lat1) / 2), 2) +
+            Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin(Math.toRadians(long2 - long1) / 2), 2);
+
+        double distance = 6371000 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+
+        return distance > 20;
     }
 
     private class EventReceiver extends BroadcastReceiver
@@ -147,7 +257,7 @@ public class BackgroundService extends Service
             {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 System.out.println("Found device: " + device.getName() + " - " + device.getAddress());
-                if (device.getAddress().equals(R.string.BLUETOOTH_DEVICE_ADDRESS))
+                if (device.getAddress().equals(getString(R.string.BLUETOOTH_DEVICE_ADDRESS)))
                 {
                     bluetoothAdapter.cancelDiscovery();
                     // TODO: connect

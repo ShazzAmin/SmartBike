@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
 
         mapWebView = findViewById(R.id.mapWebView);
-        mapWebView.loadUrl("https://danielzhang.ddns.net/map.html");
+        mapWebView.loadUrl(getString(R.string.MAP_INTERFACE_URL));
         mapWebView.getSettings().setJavaScriptEnabled(true);
 
         Intent intent = new Intent(this, BackgroundService.class);
@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity
         {
             for (BluetoothDevice device : pairedDevices)
             {
-                if (device.getAddress().equals(R.string.BLUETOOTH_DEVICE_ADDRESS))
+                if (device.getAddress().equals(getString(R.string.BLUETOOTH_DEVICE_ADDRESS)))
                 {
                     pairButton.setText("Paired!");
                     pairButton.setEnabled(false);
