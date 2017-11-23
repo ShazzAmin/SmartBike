@@ -8,11 +8,11 @@
 
     <TextView
         android:id="@+id/statusTextView"
-        android:layout_width="252dp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
-        android:text="Status"
+        android:text=""
         android:textAppearance="@style/TextAppearance.AppCompat" />
 
     <Button

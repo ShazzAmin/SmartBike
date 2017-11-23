@@ -106,12 +106,10 @@ public class MainActivity extends AppCompatActivity
             final String action = intent.getAction();
             if (action.equals(BackgroundService.DEVICE_CONNECTED))
             {
-                statusTextView.setText("device connected");
                 System.out.println("device connected");
             }
             else if (action.equals(BackgroundService.DEVICE_DISCONNECTED))
             {
-                statusTextView.setText("device disconnected");
                 System.out.println("device disconnected");
             }
         }

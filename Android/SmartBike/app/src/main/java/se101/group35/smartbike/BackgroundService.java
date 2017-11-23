@@ -4,6 +4,7 @@ import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -24,22 +25,27 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.UUID;
 
 public class BackgroundService extends Service
 {
+    private static final UUID DEVICE_UUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
     public static final String DEVICE_CONNECTED = "DEVICE_CONNECTED";
     public static final String DEVICE_DISCONNECTED = "DEVICE_DISCONNECTED";
     public static final String DEVICE_CONNECTION_STATUS = "DEVICE_CONNECTION_STATUS";
     private static final int BLUETOOTH_SCANNING_TIMEOUT =  20 * 1000; // in milliseconds
-    private static final int BLUETOOTH_SCANNING_DELAY = 5 * 60 * 1000; // in milliseconds // TODO: update for demo
-    private static final int WEBSERVER_POLLING_DELAY = 30 * 1000; // in milliseconds
+    private static final int BLUETOOTH_SCANNING_DELAY = 30 * 1000; // in milliseconds // TODO: update for demo
+    private static final int BLUETOOTH_CONNECTION_CHECK_DELAY = 10 * 1000; // in milliseconds
+    private static final int WEBSERVER_POLLING_DELAY = 1 * 60 * 1000; // in milliseconds // TODO: update for demo
+    private static final int DISTANCE_THRESHOLD = 20; // in metres
 
     private Looper serviceLooper;
     private ServiceHandler serviceHandler;
     private EventReceiver eventReceiver;
     private BluetoothAdapter bluetoothAdapter;
     private Handler handler;
-    HttpURLConnection connection;
+    private HttpURLConnection connection;
+    private BluetoothSocket socket;
     private boolean isConnected = false;
 
     public BackgroundService()
@@ -69,7 +75,16 @@ public class BackgroundService extends Service
     {
         super.onDestroy();
 
-        unregisterReceiver(eventReceiver);
+        try
+        {
+            unregisterReceiver(eventReceiver);
+            if (bluetoothAdapter != null) bluetoothAdapter.cancelDiscovery();
+            if (connection != null) connection.disconnect();
+            if (socket != null) socket.close();
+        }
+        catch (Exception e)
+        {
+        }
     }
 
     @Override
@@ -90,6 +105,17 @@ public class BackgroundService extends Service
 
     private void startBluetoothScanningLoop()
     {
+        handler.postDelayed(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                startBluetoothScanningLoop();
+            }
+        }, BLUETOOTH_SCANNING_DELAY);
+
+        if (isConnected) return;
+
         if (bluetoothAdapter != null && bluetoothAdapter.isEnabled())
         {
             bluetoothAdapter.startDiscovery();
@@ -104,16 +130,42 @@ public class BackgroundService extends Service
                     bluetoothAdapter.cancelDiscovery();
                 }
             }, BLUETOOTH_SCANNING_TIMEOUT);
-
-            handler.postDelayed(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    startBluetoothScanningLoop();
-                }
-            }, BLUETOOTH_SCANNING_DELAY);
         }
+    }
+
+    private void startBluetoothConnectionCheckLoop()
+    {
+        if (!isConnected) return;
+
+        try
+        {
+            socket.getOutputStream().write(1);
+        }
+        catch (Exception e)
+        {
+            System.out.println("device connection lost");
+            try
+            {
+                socket.close();
+                socket = null;
+                isConnected = false;
+            }
+            catch (Exception err)
+            {
+                err.printStackTrace();
+            }
+
+            return;
+        }
+
+        handler.postDelayed(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                startBluetoothConnectionCheckLoop();
+            }
+        }, BLUETOOTH_CONNECTION_CHECK_DELAY);
     }
 
     private void skipXMLTag(XmlPullParser parser) throws XmlPullParserException, IOException
@@ -147,7 +199,15 @@ public class BackgroundService extends Service
             @Override
             public void run()
             {
-                startIsMovingLoop();
+                Thread t = new Thread(new Runnable(){
+                    @Override
+                    public void run()
+                    {
+                        startIsMovingLoop();
+                    }
+                });
+
+                t.start();
             }
         }, WEBSERVER_POLLING_DELAY);
 
@@ -172,7 +232,6 @@ public class BackgroundService extends Service
             {
                 if (parser.getEventType() != XmlPullParser.START_TAG) continue;
                 String name = parser.getName();
-                System.out.println(name);
                 if (name.equals("latitude"))
                 {
                     if (parser.next() == XmlPullParser.TEXT)
@@ -197,15 +256,20 @@ public class BackgroundService extends Service
                 }
             }
 
-            // System.out.println(lat1 + "," + long1 + "," + lat2 + "," + long2);
+            System.out.println(lat1 + "," + long1 + "," + lat2 + "," + long2);
             if (didMove(lat1, long1, lat2, long2))
             {
                 // TODO: Show notification
+                System.out.println("BIKE MOVED!");
             }
         }
-        catch (Exception e) { }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
         finally
         {
+            System.out.println("closing connection");
             try { if (in != null) in.close(); } catch (Exception e) { }
             if (connection != null) connection.disconnect();
         }
@@ -238,7 +302,9 @@ public class BackgroundService extends Service
 
         double distance = 6371000 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
 
-        return distance > 20;
+        System.out.println("distance: " + distance);
+
+        return distance > DISTANCE_THRESHOLD;
     }
 
     private class EventReceiver extends BroadcastReceiver
@@ -254,12 +320,33 @@ public class BackgroundService extends Service
             }
             else if (action.equals(BluetoothDevice.ACTION_FOUND))
             {
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 System.out.println("Found device: " + device.getName() + " - " + device.getAddress());
                 if (device.getAddress().equals(getString(R.string.BLUETOOTH_DEVICE_ADDRESS)))
                 {
                     bluetoothAdapter.cancelDiscovery();
-                    // TODO: connect
+                    System.out.println("Device discovered");
+                    Thread t = new Thread(new Runnable(){
+                        @Override
+                        public void run()
+                        {
+                            try
+                            {
+                                socket = device.createRfcommSocketToServiceRecord(DEVICE_UUID);
+                                socket.connect();
+                                isConnected = true;
+
+                                startBluetoothConnectionCheckLoop();
+                                System.out.println("connected to device");
+                            }
+                            catch (Exception e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+
+                    t.start();
                 }
             }
         }

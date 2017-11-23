@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">SmartBike</string>
-    <string name="BLUETOOTH_DEVICE_ADDRESS">a</string>
+    <string name="BLUETOOTH_DEVICE_ADDRESS">00:21:13:00:3D:68</string>
     <string name="MAP_INTERFACE_URL">https://danielzhang.ddns.net/map.html</string>
     <string name="GPS_FILE_URL">https://danielzhang.ddns.net//gps.xml</string>
 </resources>
