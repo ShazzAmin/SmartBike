@@ -5,7 +5,7 @@
 //--- Broadcast_GPS_SMS
 #include "DFRobot_sim808.h"
 
-#define PHONE_NUMBER "16477721337"
+#define PHONE_NUMBER "xxxxxxxxxxx"
 
 
 //--- Bluetooth
